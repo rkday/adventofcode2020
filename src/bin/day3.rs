@@ -14,9 +14,9 @@ fn part2(right: usize, down: usize) -> usize {
     std::fs::read_to_string("input_day3.txt")
         .unwrap()
         .lines()
+        // Skip the lines we're moving down past
         .step_by(down)
         .enumerate()
-        // Skip the lines we're moving down past
         .filter(|(linenum, line)| {
             // Move right as many squares as we move down, but then wrap that back in to the actual width of our (infinitely-repeating) input
             let pos = (right * linenum) % line.len();
