@@ -11,8 +11,8 @@ fn part1() {
 }
 
 fn part2(right: usize, down: usize) -> usize {
-    let input = std::fs::read_to_string("input_day3.txt").unwrap();
-    input
+    std::fs::read_to_string("input_day3.txt")
+        .unwrap()
         .lines()
         .step_by(down)
         .enumerate()
