@@ -16,8 +16,7 @@ fn trees_for_slope(right: usize, down: usize) -> usize {
 fn main() {
     println!("Part 1: {}", trees_for_slope(3, 1));
 
-    let slopes: Vec<(usize, usize)> = vec![(1, 1), (3, 1), (5, 1), (7, 1), (1, 2)];
-    let result = slopes
+    let result = vec![(1, 1), (3, 1), (5, 1), (7, 1), (1, 2)]
         .into_iter()
         .map(|(right, down)| {
             let trees = trees_for_slope(right, down);
