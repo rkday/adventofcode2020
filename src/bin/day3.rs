@@ -1,20 +1,7 @@
-fn part1() {
-    let input = std::fs::read_to_string("input_day3.txt").unwrap();
-    let mut trees = 0;
-    for (linenum, line) in input.lines().enumerate() {
-        let pos = (0 + (3 * linenum)) % line.len();
-        if line.chars().collect::<Vec<_>>()[pos] == '#' {
-            trees += 1;
-        }
-    }
-    println!("{}", trees);
-}
-
-fn part2(right: usize, down: usize) -> usize {
+fn trees_for_slope(right: usize, down: usize) -> usize {
     std::fs::read_to_string("input_day3.txt")
         .unwrap()
         .lines()
-        // Skip the lines we're moving down past
         .step_by(down)
         .enumerate()
         .filter(|(linenum, line)| {
@@ -27,15 +14,17 @@ fn part2(right: usize, down: usize) -> usize {
 }
 
 fn main() {
-    part1();
+    println!("Part 1: {}", trees_for_slope(3, 1));
 
-    println!("{}", part2(1, 1));
-    println!("{}", part2(3, 1));
-    println!("{}", part2(5, 1));
-    println!("{}", part2(7, 1));
-    println!("{}", part2(1, 2));
-    println!(
-        "{}",
-        part2(1, 1) * part2(3, 1) * part2(5, 1) * part2(7, 1) * part2(1, 2)
-    );
+    let slopes: Vec<(usize, usize)> = vec![(1, 1), (3, 1), (5, 1), (7, 1), (1, 2)];
+    let result = slopes
+        .into_iter()
+        .map(|(right, down)| {
+            let trees = trees_for_slope(right, down);
+            println!("{} right, {} down - {} trees", right, down, trees);
+            trees
+        })
+        .fold(1, |acc, x| acc * x);
+
+    println!("Part 2: {}", result);
 }
