@@ -5,7 +5,7 @@ fn trees_for_slope(right: usize, down: usize) -> usize {
         .step_by(down)
         .enumerate()
         .filter(|(linenum, line)| {
-            // Move right as many squares as we move down, but then wrap that back in to the actual width of our (infinitely-repeating) input
+            // Move right with each step, but then wrap that back in to the actual width of our (infinitely-repeating) input
             let pos = (right * linenum) % line.len();
             // Did we hit a tree?
             line.chars().nth(pos) == Some('#')
