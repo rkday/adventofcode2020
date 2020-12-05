@@ -42,7 +42,6 @@ fn main() {
 
     let my_boarding_pass_id = iproduct!(row_numbers, col_numbers)
         .map(|(row, col)| BoardingPass { row, col }.id())
-        .sorted()
         .tuple_windows()
         .filter(|(a, b, c)| all_ids.contains(a) && all_ids.contains(c) && !all_ids.contains(b))
         .next()
