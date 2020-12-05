@@ -1,18 +1,4 @@
-use itertools::iproduct;
-use itertools::Itertools;
 use std::collections::HashSet;
-
-#[derive(PartialEq, Hash, Eq, Debug)]
-struct BoardingPass {
-    pub row: u32,
-    pub col: u32,
-}
-
-impl BoardingPass {
-    fn id(&self) -> u32 {
-        self.col + (self.row * 8)
-    }
-}
 
 fn chop(seats: Vec<u32>, decider: char) -> Vec<u32> {
     if decider == 'F' || decider == 'L' {
@@ -29,20 +15,16 @@ fn main() {
 
     let boarding_passes = input.lines().map(|boarding_pass| {
         let (row, col) = boarding_pass.split_at(7);
-        BoardingPass {
-            row: row.chars().fold(row_numbers.clone(), chop)[0],
-            col: col.chars().fold(col_numbers.clone(), chop)[0],
-        }
+        (
+            row.chars().fold(row_numbers.clone(), chop)[0],
+            col.chars().fold(col_numbers.clone(), chop)[0],
+        )
     });
 
-    let all_ids: HashSet<_> = boarding_passes.map(|bp| bp.id()).collect();
+    let all_ids: HashSet<_> = boarding_passes.map(|(r, c)| (r * 8) + c).collect();
     let max_id = all_ids.iter().fold(0, |a, b| std::cmp::max(a, *b));
+    let min_id = all_ids.iter().fold(max_id, |a, b| std::cmp::min(a, *b));
+    let my_bpid = (min_id..max_id).filter(|id| !all_ids.contains(id)).next();
 
-    let my_boarding_pass_id = iproduct!(row_numbers, col_numbers)
-        .map(|(row, col)| BoardingPass { row, col }.id())
-        .tuple_windows()
-        .filter(|(a, b, c)| all_ids.contains(a) && all_ids.contains(c) && !all_ids.contains(b))
-        .next()
-        .map(|t| t.1);
-    println!("max id {}, my id {}", max_id, my_boarding_pass_id.unwrap());
+    println!("max id {}, my id {}", max_id, my_bpid.unwrap());
 }
