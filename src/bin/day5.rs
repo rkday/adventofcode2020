@@ -1,5 +1,3 @@
-use std::collections::HashSet;
-
 fn chop(seats: Vec<u32>, decider: char) -> Vec<u32> {
     if decider == 'F' || decider == 'L' {
         seats.split_at(seats.len() / 2).0.to_vec()
@@ -21,7 +19,7 @@ fn main() {
         )
     });
 
-    let all_ids: HashSet<_> = boarding_passes.map(|(r, c)| (r * 8) + c).collect();
+    let all_ids: std::collections::HashSet<_> = boarding_passes.map(|(r, c)| (r * 8) + c).collect();
     let max_id = all_ids.iter().fold(0, |a, b| std::cmp::max(a, *b));
     let min_id = all_ids.iter().fold(max_id, |a, b| std::cmp::min(a, *b));
     let my_bpid = (min_id..max_id).filter(|id| !all_ids.contains(id)).next();
