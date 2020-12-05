@@ -15,13 +15,11 @@ impl BoardingPass {
 }
 
 fn chop(seats: Vec<u32>, decider: char) -> Vec<u32> {
-    let (lower, higher) = seats.split_at(seats.len() / 2);
     if decider == 'F' || decider == 'L' {
-        lower
+        seats.split_at(seats.len() / 2).0.to_vec()
     } else {
-        higher
+        seats.split_at(seats.len() / 2).1.to_vec()
     }
-    .to_vec()
 }
 fn main() {
     let row_numbers: Vec<_> = (0..128).collect();
