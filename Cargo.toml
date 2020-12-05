@@ -9,4 +9,3 @@ edition = "2018"
 [dependencies]
 itertools = "*"
 nom = "*"
-regex = "1"
