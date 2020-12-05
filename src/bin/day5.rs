@@ -1,4 +1,5 @@
 use itertools::iproduct;
+use itertools::Itertools;
 use std::collections::HashSet;
 
 #[derive(PartialEq, Hash, Eq, Debug)]
@@ -36,21 +37,16 @@ fn main() {
         }
     });
 
-    let all_ids: HashSet<_> = boarding_passes.clone().map(|bp| bp.id()).collect();
+    let all_ids: HashSet<_> = boarding_passes.map(|bp| bp.id()).collect();
     let max_id = all_ids.iter().fold(0, |a, b| std::cmp::max(a, *b));
 
-    let known_boarding_passes: HashSet<_> = boarding_passes.collect();
-
-    let all_boarding_passes: HashSet<_> = iproduct!(row_numbers, col_numbers)
-        .map(|(row, col)| BoardingPass { row, col })
-        .collect();
-
-    let my_boarding_pass_id = all_boarding_passes
-        .difference(&known_boarding_passes)
-        .filter(|bp| all_ids.contains(&(bp.id() + 1)) && all_ids.contains(&(bp.id() - 1)))
+    let my_boarding_pass_id = iproduct!(row_numbers, col_numbers)
+        .map(|(row, col)| BoardingPass { row, col }.id())
+        .sorted()
+        .tuple_windows()
+        .filter(|(a, b, c)| all_ids.contains(a) && all_ids.contains(c) && !all_ids.contains(b))
         .next()
         .unwrap()
-        .id();
-    println!("{}", max_id);
-    println!("{}", my_boarding_pass_id);
+        .1;
+    println!("max id {}, my id {}", max_id, my_boarding_pass_id);
 }
