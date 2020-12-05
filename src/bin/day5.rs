@@ -40,7 +40,7 @@ fn main() {
     let max_id = all_ids.iter().fold(0, |a, b| std::cmp::max(a, *b));
 
     let known_boarding_passes: HashSet<_> = boarding_passes.collect();
-    
+
     let all_boarding_passes: HashSet<_> = iproduct!(row_numbers, col_numbers)
         .map(|(row, col)| BoardingPass { row, col })
         .collect();

@@ -7,17 +7,6 @@ use nom::{
 };
 use std::collections::{HashMap, HashSet};
 
-fn get_next_passport<'a, I>(i: &mut I) -> Option<String>
-where
-    I: Iterator<Item = &'a str>,
-{
-    i.skip_while(|s| s.is_empty())
-        .take_while(|s| !s.is_empty())
-        .fold(None, |acc, s| {
-            Some(format!("{} {}", acc.unwrap_or_else(String::new), s))
-        })
-}
-
 fn valid_hgt(input: &str) -> bool {
     let result: nom::IResult<_, _> = tuple((digit1, alt((tag("cm"), tag("in")))))(input);
     match result {
@@ -75,7 +64,13 @@ fn main() {
 
     let passports = input
         .lines()
-        .batching(|i| get_next_passport(i))
+        .batching(|i| {
+            i.skip_while(|s| s.is_empty())
+                .take_while(|s| !s.is_empty())
+                .fold(None, |acc, s| {
+                    Some(format!("{} {}", acc.unwrap_or_else(String::new), s))
+                })
+        })
         .map(|passport| {
             passport
                 .split(" ")
