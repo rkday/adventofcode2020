@@ -45,7 +45,6 @@ fn main() {
         .tuple_windows()
         .filter(|(a, b, c)| all_ids.contains(a) && all_ids.contains(c) && !all_ids.contains(b))
         .next()
-        .unwrap()
-        .1;
-    println!("max id {}, my id {}", max_id, my_boarding_pass_id);
+        .map(|t| t.1);
+    println!("max id {}, my id {}", max_id, my_boarding_pass_id.unwrap());
 }
