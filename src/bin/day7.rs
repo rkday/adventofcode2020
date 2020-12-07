@@ -18,9 +18,9 @@ fn find_outer_bags<'a>(
         .collect::<HashSet<_>>();
 
     if inner_colours == new_inner_colours {
-        return inner_colours;
+        inner_colours
     } else {
-        return find_outer_bags(new_inner_colours, hm);
+        find_outer_bags(new_inner_colours, hm)
     }
 }
 
