@@ -5,12 +5,8 @@ fn find_outer_bags<'a>(
     hm: &HashMap<&'a str, HashSet<&'a str>>,
 ) -> HashSet<&'a str> {
     let new_inner_colours = inner_colours
-        .clone()
         .iter()
-        .map(|c| {
-            hm.iter()
-                .filter_map(move |(k, v)| if v.contains(c) { Some(*k) } else { None })
-        })
+        .map(|c| hm.iter().filter_map(move |(k, v)| v.get(c).map(|_| *k)))
         .flatten()
         .collect::<HashSet<_>>()
         .union(&inner_colours)
@@ -61,23 +57,18 @@ fn main() {
         .collect::<HashMap<_, _>>();
 
     let hm_part1 = hm_part2
-        .clone()
-        .into_iter()
-        .map(|(k, v)| (k, v.into_iter().collect::<HashSet<_>>()))
+        .iter()
+        .map(|(k, v)| (*k, v.iter().map(|x| *x).collect::<HashSet<&str>>()))
         .collect::<HashMap<_, _>>();
 
     let initial_outer_bags = hm_part1
         .iter()
-        .filter_map(|(k, v)| {
-            if v.contains("shiny gold") {
-                Some(*k)
-            } else {
-                None
-            }
-        })
+        .filter_map(|(k, v)| v.get("shiny gold").map(|_| *k))
         .collect();
     let outer_bags = find_outer_bags(initial_outer_bags, &hm_part1);
-    println!("{}", outer_bags.len());
-
-    println!("{}", count_inner_bags("shiny gold", &hm_part2));
+    println!(
+        "Part 1 {}, Part 2 {}",
+        outer_bags.len(),
+        count_inner_bags("shiny gold", &hm_part2)
+    );
 }
