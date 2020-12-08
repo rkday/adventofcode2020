@@ -6,7 +6,7 @@ use nom::{
     sequence::tuple,
 };
 use std::str::FromStr;
-#[derive(Clone)]
+#[derive(Clone, Copy)]
 enum Op {
     Acc(i32),
     Jmp(i32),
@@ -30,8 +30,9 @@ impl FromStr for Op {
                     "nop" => Op::Nop(i),
                     "acc" => Op::Acc(i),
                     "jmp" => Op::Jmp(i),
-                    _ => unreachable!()
-                })},
+                    _ => unreachable!(),
+                })
+            }
             _ => Err(()),
         }
     }
@@ -60,11 +61,16 @@ impl Program {
     fn new(operations: Vec<Op>) -> Self {
         Self { operations }
     }
-    fn execute(&self, idx: usize, ex: ExecutionState) -> (bool, i32) {
+
+    fn execute(&self) -> Result<i32, i32> {
+        self.execute2(0, ExecutionState::default())
+    }
+
+    fn execute2(&self, idx: usize, ex: ExecutionState) -> Result<i32, i32> {
         if ex.history.contains(&idx) {
-            (false, ex.acc)
+            Err(ex.acc)
         } else if idx == self.operations.len() {
-            (true, ex.acc)
+            Ok(ex.acc)
         } else {
             let (increment, advance) = match self.operations[idx] {
                 Op::Acc(acc) => (acc, 1),
@@ -74,7 +80,7 @@ impl Program {
 
             let new_state = ex.update(increment, idx);
 
-            self.execute((idx as i32 + advance) as usize, new_state)
+            self.execute2((idx as i32 + advance) as usize, new_state)
         }
     }
 
@@ -84,16 +90,10 @@ impl Program {
             .clone()
             .into_iter()
             .enumerate()
-            .map(|(idx, val)| {
-                if idx == change_idx {
-                    match val {
-                        Op::Nop(x) => Op::Jmp(x),
-                        Op::Jmp(x) => Op::Nop(x),
-                        _ => panic!(),
-                    }
-                } else {
-                    val
-                }
+            .map(|(idx, val)| match (idx == change_idx, val) {
+                (true, Op::Nop(x)) => Op::Jmp(x),
+                (true, Op::Jmp(x)) => Op::Nop(x),
+                _ => val,
             })
             .collect();
 
@@ -108,16 +108,13 @@ fn main() {
         .map(|l| l.parse().unwrap())
         .collect();
     let p = Program::new(input.clone());
-    println!("{}", p.execute(0, ExecutionState::default()).1);
+    println!("{}", p.execute().unwrap_or_else(|i| i));
 
     let indexes_to_change = input.iter().enumerate().filter_map(|(idx, val)| match val {
         Op::Jmp(_) | Op::Nop(_) => Some(idx),
         _ => None,
     });
     let maybe_programs = indexes_to_change.map(|idx| p.attempt_fix(idx));
-    let working_program = maybe_programs
-        .map(|p| p.execute(0, ExecutionState::default()))
-        .filter(|(terminates, _)| *terminates)
-        .next();
-    println!("{:#?}", working_program.unwrap().1);
+    let working_program = maybe_programs.filter_map(|p| p.execute().ok()).next();
+    println!("{:#?}", working_program.unwrap());
 }
