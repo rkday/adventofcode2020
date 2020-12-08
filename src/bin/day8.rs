@@ -1,11 +1,11 @@
-use std::collections::HashSet;
-use std::str::FromStr;
+use im::HashSet;
 use nom::{
     branch::alt,
     bytes::streaming::tag,
     character::complete::{char, digit1},
     sequence::tuple,
 };
+use std::str::FromStr;
 #[derive(Clone)]
 enum Op {
     Acc(i32),
@@ -13,105 +13,111 @@ enum Op {
     Nop(i32),
 }
 
-
 impl FromStr for Op {
     type Err = ();
-
-    // Parses a color hex code of the form '#rRgGbB..' into an
-    // instance of 'RGB'
     fn from_str(operation: &str) -> Result<Self, Self::Err> {
-        let result: nom::IResult<_, _> = tuple(
-            (
-                alt((tag("nop"), tag("acc"), tag("jmp"))),
-                char(' '),
-                alt((char('+'), char('-'))),
-                digit1
-            ))(operation);
+        let result: nom::IResult<_, _> = tuple((
+            alt((tag("nop"), tag("acc"), tag("jmp"))),
+            char(' '),
+            alt((char('+'), char('-'))),
+            digit1,
+        ))(operation);
 
         match result {
-            Ok((_, ("nop", _, sign, val))) => Ok(Op::Nop(val.parse::<i32>().unwrap() * if sign == '-' { -1 } else {1})),
-            Ok((_, ("acc", _, sign, val))) => Ok(Op::Acc(val.parse::<i32>().unwrap() * if sign == '-' { -1 } else {1})),
-            Ok((_, ("jmp", _, sign, val))) => Ok(Op::Jmp(val.parse::<i32>().unwrap() * if sign == '-' { -1 } else {1})),
-            _ => Err(())
-
+            Ok((_, (operation, _, sign, val))) => {
+                let i = val.parse::<i32>().unwrap() * if sign == '-' { -1 } else { 1 };
+                Ok(match operation {
+                    "nop" => Op::Nop(i),
+                    "acc" => Op::Acc(i),
+                    "jmp" => Op::Jmp(i),
+                    _ => unreachable!()
+                })},
+            _ => Err(()),
         }
     }
 }
 
 struct Program {
     operations: Vec<Op>,
+}
+
+#[derive(Default)]
+struct ExecutionState {
     acc: i32,
     history: HashSet<usize>,
 }
 
-impl Program {
-    fn new(operations: Vec<Op>) -> Self {
-        Program {
-            operations,
-            acc: 0,
-            history: HashSet::new(),
+impl ExecutionState {
+    fn update(&self, increment: i32, hist_item: usize) -> Self {
+        Self {
+            acc: self.acc + increment,
+            history: self.history.update(hist_item),
         }
     }
-    fn execute(&mut self, idx: usize) -> (bool, i32) {
-        if self.history.contains(&idx) {
-            (false, self.acc)
-        } else if idx == self.operations.len() {
-            (true, self.acc)
-        } else {
-            self.history.insert(idx);
+}
 
+impl Program {
+    fn new(operations: Vec<Op>) -> Self {
+        Self { operations }
+    }
+    fn execute(&self, idx: usize, ex: ExecutionState) -> (bool, i32) {
+        if ex.history.contains(&idx) {
+            (false, ex.acc)
+        } else if idx == self.operations.len() {
+            (true, ex.acc)
+        } else {
             let (increment, advance) = match self.operations[idx] {
                 Op::Acc(acc) => (acc, 1),
                 Op::Jmp(offset) => (0, offset),
                 Op::Nop(_) => (0, 1),
             };
 
-            self.acc += increment;
-            self.execute((idx as i32 + advance) as usize)
+            let new_state = ex.update(increment, idx);
+
+            self.execute((idx as i32 + advance) as usize, new_state)
         }
     }
 
     fn attempt_fix(&self, change_idx: usize) -> Self {
-        let new_instructions = self.operations.clone().into_iter().enumerate().map(|(idx, val)| {
-            if idx == change_idx {
-                match val {
-                    Op::Nop(x) => Op::Jmp(x),
-                    Op::Jmp(x) => Op::Nop(x),
-                    _ => panic!()
+        let new_instructions = self
+            .operations
+            .clone()
+            .into_iter()
+            .enumerate()
+            .map(|(idx, val)| {
+                if idx == change_idx {
+                    match val {
+                        Op::Nop(x) => Op::Jmp(x),
+                        Op::Jmp(x) => Op::Nop(x),
+                        _ => panic!(),
+                    }
+                } else {
+                    val
                 }
-
-            } else {
-                val
-            }
-        }).collect();
+            })
+            .collect();
 
         Program::new(new_instructions)
     }
 }
 
 fn main() {
-    let test = vec![
-        Op::Nop(0),
-        Op::Acc(1),
-        Op::Jmp(4),
-        Op::Acc(3),
-        Op::Jmp(-3),
-        Op::Acc(-99),
-        Op::Acc(1),
-        Op::Jmp(-4),
-        Op::Acc(6),
-    ];
-    let mut p = Program::new(test);
-    println!("{}", p.execute(0).1);
-    let input: Vec<Op> = std::fs::read_to_string("input_day8.txt").unwrap().lines().map(|l| l.parse().unwrap()).collect();
-    let mut p = Program::new(input.clone());
-    println!("{}", p.execute(0).1);
+    let input: Vec<Op> = std::fs::read_to_string("input_day8.txt")
+        .unwrap()
+        .lines()
+        .map(|l| l.parse().unwrap())
+        .collect();
+    let p = Program::new(input.clone());
+    println!("{}", p.execute(0, ExecutionState::default()).1);
 
     let indexes_to_change = input.iter().enumerate().filter_map(|(idx, val)| match val {
         Op::Jmp(_) | Op::Nop(_) => Some(idx),
-        _ => None
+        _ => None,
     });
     let maybe_programs = indexes_to_change.map(|idx| p.attempt_fix(idx));
-    let working_program = maybe_programs.map(|mut p| p.execute(0)).filter(|(terminates, _)| *terminates).next();
-    println!("{:#?}", working_program);
+    let working_program = maybe_programs
+        .map(|p| p.execute(0, ExecutionState::default()))
+        .filter(|(terminates, _)| *terminates)
+        .next();
+    println!("{:#?}", working_program.unwrap().1);
 }

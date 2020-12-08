@@ -10,7 +10,7 @@ fn find_outer_bags<'a>(
         .flatten()
         .collect::<HashSet<_>>()
         .union(&inner_colours)
-        .cloned()
+        .map(|x| *x)
         .collect::<HashSet<_>>();
 
     if inner_colours == new_inner_colours {
@@ -45,7 +45,7 @@ fn main() {
                         .split(", ")
                         .map(|b| {
                             let c = inner_bag_re.captures(b).unwrap();
-                            let num_bags = c.get(1).unwrap().as_str().parse().unwrap();
+                            let num_bags = c[1].parse().unwrap();
                             std::iter::repeat(c.get(2).unwrap().as_str()).take(num_bags)
                         })
                         .flatten()
